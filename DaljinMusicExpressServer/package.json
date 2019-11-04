@@ -11,7 +11,7 @@
     "express-session": "^1.16.2",
     "get-audio-duration": "^1.0.0",
     "http": "^0.0.0",
-    "mongoose": "^5.7.3",
+    "mongoose": "^5.7.5",
     "multer": "^1.4.2"
   },
   "scripts": {
