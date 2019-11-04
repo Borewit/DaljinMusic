@@ -10,7 +10,7 @@ const multer = require('multer')
 
 const fs = require('fs')
 const { UPLOAD_PATH , ALBUM_IMG_PATH , MUSIC_PATH , ALBUM_IMG_URI } = process.env
-const { getAudioDurationInSeconds } = require('get-audio-duration')
+const mm = require('music-metadata')
 
 const MusicModel = require('../Database/mongoDB').musicModel
 const SingerModel = require('../Database/mongoDB').singerModel
@@ -207,7 +207,7 @@ const upload = multer({
 })
 
 router.post('/musicupload' , upload.fields( [ { name: 'musicFiles' } , { name : 'albumImgFiles' } ] ) , doAsync(async (req , res , next) => {
-    
+
     const response = {
         message : '',
         complete : []
@@ -274,9 +274,9 @@ router.post('/musicupload' , upload.fields( [ { name: 'musicFiles' } , { name : 
                         singerId = singerFindResult._id
                     }
                 }
-                
-                
-                
+
+
+
                 //앨범 저장
                 let albumId = null
                 if(albums[i].albumDatabaseId !== '') {
@@ -325,43 +325,42 @@ router.post('/musicupload' , upload.fields( [ { name: 'musicFiles' } , { name : 
                         }
                     }
 
-                    
+
                 }
 
+            const metadata = await mm.parseFile(musicNewPath, {duration: true})
 
-                //음악 저장
-                const musicModel = new MusicModel({
-                    song : songs[i].name,
-                    singer : singerId,
-                    album : albumId,
-                    filePath : musicNewPath,
-                    duration : await getAudioDurationInSeconds(musicNewPath),
-                    uploadDate : getTime(),
-                    totalPlayCount : 0,
-                    weekPlayCount : 0,
-                    dayPlayCount : 0,
-                    category : categories[i].category
-                })
+            //음악 저장
+            const musicModel = new MusicModel({
+                song : songs[i].name,
+                singer : singerId,
+                album : albumId,
+                filePath : musicNewPath,
+                playTime : metadata.format.duration,
+                uploadDate : getTime(),
+                totalPlayCount : 0,
+                weekPlayCount : 0,
+                dayPlayCount : 0,
+                category : categories[i].category
+            })
 
-
-                musicModel.save()
-                console.log('업로드 완료')
-                response.complete.push(true)
-            }
-            catch(err) {
-                console.error(err)
-                console.log('업로드 실패')
-                response.complete.push(false)
-            }
+            musicModel.save()
+            console.log('업로드 완료')
+            response.complete.push(true)
+        }
+        catch(err) {
+            console.error(err)
+            console.log('업로드 실패')
+            response.complete.push(false)
         }
     }
     else {
         response.message = '관리자외 업로드 불가'
     }
-    
+
 
     res.json(response)
-    
+
 }))
 
 
